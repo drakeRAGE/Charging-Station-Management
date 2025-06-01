@@ -4,6 +4,7 @@ import RegisterView from '../views/RegisterView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import ChargingStationView from '../views/ChargingStationView.vue';
 import HomeView from '../views/HomeView.vue';
+import AboutView from '../views/AboutView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
       name: 'stations',
       component: ChargingStationView,
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/about',
+      name: 'about',
+      component: AboutView,
     }
   ]
 });
