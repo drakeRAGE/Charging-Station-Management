@@ -1,6 +1,6 @@
 <script setup>
 const props = defineProps({
-  charger: {
+  station: {
     type: Object,
     required: true
   }
@@ -8,17 +8,17 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="charger-card">
-    <h3>{{ charger.name }}</h3>
-    <p>Location: {{ charger.location }}</p>
-    <p>Status: {{ charger.status }}</p>
-    <p>Power: {{ charger.power }} kW</p>
-    <p>Price: ${{ charger.price }}/kWh</p>
+  <div class="station-card">
+    <h3>{{ station.name }}</h3>
+    <p>Location: {{ station.location }}</p>
+    <p>Status: {{ station.status }}</p>
+    <p>Power: {{ station.powerOutput }} kW</p>
+    <p>connector Type: ${{ station.connectorType }}/kWh</p>
   </div>
 </template>
 
 <style scoped>
-.charger-card {
+.station-card {
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 16px;

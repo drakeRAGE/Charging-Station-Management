@@ -1,4 +1,5 @@
 <script setup>
+import { reactive } from 'vue';
 const emit = defineEmits(['submit']);
 const charger = defineProps({
   initialData: {
@@ -6,14 +7,14 @@ const charger = defineProps({
     default: () => ({
       name: '',
       location: '',
-      status: 'available',
-      power: '',
-      price: ''
+      status: 'Active',
+      powerOutput: '',
+      connectorType: ''
     })
   }
 });
 
-const formData = reactive({...charger.initialData});
+const formData = reactive({ ...charger.initialData });
 
 const handleSubmit = () => {
   emit('submit', formData);
@@ -33,18 +34,17 @@ const handleSubmit = () => {
     <div class="form-group">
       <label>Status</label>
       <select v-model="formData.status">
-        <option value="available">Available</option>
-        <option value="in-use">In Use</option>
-        <option value="maintenance">Maintenance</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
       </select>
     </div>
     <div class="form-group">
       <label>Power (kW)</label>
-      <input v-model="formData.power" type="number" required />
+      <input v-model="formData.powerOutput" type="number" required />
     </div>
     <div class="form-group">
-      <label>Price ($/kWh)</label>
-      <input v-model="formData.price" type="number" step="0.01" required />
+      <label>Connector Type</label>
+      <input v-model="formData.connectorType" step="0.01" required />
     </div>
     <button type="submit">Submit</button>
   </form>
@@ -60,7 +60,8 @@ label {
   margin-bottom: 0.5rem;
 }
 
-input, select {
+input,
+select {
   width: 100%;
   padding: 0.5rem;
   border: 1px solid #ddd;

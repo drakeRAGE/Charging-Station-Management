@@ -1,8 +1,18 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
+import ChargerForm from '../components/ChargerForm.vue';
+import ChargerCard from '../components/ChargerCard.vue';
 
 const router = useRouter();
+const stations = ref([]);
+const isLoading = ref(false);
+const error = ref(null);
+const isEditing = ref(false);
+const currentStationId = ref(null);
+
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const checkAuth = () => {
   const token = localStorage.getItem('token');
@@ -10,31 +20,67 @@ const checkAuth = () => {
     router.push('/login');
     return;
   }
+  return token;
+};
+
+const fetchStations = async () => {
+  try {
+    isLoading.value = true;
+
+    const { data } = await axios.get(`${apiUrl}/api/charging-stations`);
+    console.log("fetching data", data)
+    stations.value = data;
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleSubmit = async (formData) => {
+  const token = checkAuth();
+  try {
+    if (isEditing.value) {
+
+      await axios.put(`${apiUrl}/api/charging-stations/${currentStationId.value}`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } else {
+      console.log("formData", formData)
+      await axios.post(`${apiUrl}/api/charging-stations`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }
+    await fetchStations();
+    isEditing.value = false;
+    currentStationId.value = null;
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message;
+  }
+};
+
+const handleEdit = (station) => {
+  isEditing.value = true;
+  currentStationId.value = station._id;
+};
+
+const handleDelete = async (id) => {
+  const token = checkAuth();
+  try {
+
+    await axios.delete(`${apiUrl}/api/charging-stations/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    await fetchStations();
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message;
+  }
 };
 
 onMounted(() => {
   checkAuth();
+  fetchStations();
 });
-
-const stations = ref([
-  { id: 1, name: 'Station 1', location: 'Downtown', available: true },
-  { id: 2, name: 'Station 2', location: 'Uptown', available: false },
-  { id: 3, name: 'Station 3', location: 'Midtown', available: true }
-]);
-
-const newStation = ref({
-  name: '',
-  location: '',
-  available: false
-});
-
-const addStation = () => {
-  stations.value.push({
-    id: stations.value.length + 1,
-    ...newStation.value
-  });
-  newStation.value = { name: '', location: '', available: false };
-};
 
 
 
@@ -50,34 +96,21 @@ const addStation = () => {
         Map will be displayed here
       </div>
     </div>
-    
+
     <div class="station-form">
-      <h3>Add Charging Station</h3>
-      <form @submit.prevent="addStation">
-        <div class="form-group">
-          <label>Name</label>
-          <input v-model="newStation.name" type="text" required />
-        </div>
-        <div class="form-group">
-          <label>Location</label>
-          <input v-model="newStation.location" type="text" required />
-        </div>
-        <div class="form-group">
-          <label>
-            <input v-model="newStation.available" type="checkbox" />
-            Available
-          </label>
-        </div>
-        <button type="submit" class="btn">Add Station</button>
-      </form>
+      <h3>{{ isEditing ? 'Edit' : 'Add' }} Charging Station</h3>
+      <ChargerForm v-if="isEditing" :initial-data="stations.find(s => s._id === currentStationId)"
+        @submit="handleSubmit" @cancel="isEditing = false; currentStationId = null" />
+      <ChargerForm v-else @submit="handleSubmit" />
     </div>
-    
+
     <div class="station-list">
       <h3>Available Stations</h3>
-      <div v-for="station in stations" :key="station.id" class="station-card">
-        <h4>{{ station.name }}</h4>
-        <p>Location: {{ station.location }}</p>
-        <p>Status: {{ station.available ? 'Available' : 'Occupied' }}</p>
+      <div v-if="isLoading">Loading...</div>
+      <div v-else-if="error">{{ error }}</div>
+      <div v-else>
+        <ChargerCard v-for="station in stations" :key="station._id" :station="station" @edit="handleEdit"
+          @delete="handleDelete" />
       </div>
     </div>
   </div>
@@ -91,11 +124,13 @@ const addStation = () => {
   padding: 20px;
 }
 
-.map-container, .station-form, .station-list {
+.map-container,
+.station-form,
+.station-list {
   background: white;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .map-placeholder {
