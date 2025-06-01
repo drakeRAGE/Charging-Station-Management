@@ -4,23 +4,11 @@
     <form @submit.prevent="handleLogin">
       <div class="form-group">
         <label for="email">Email</label>
-        <input 
-          type="email" 
-          id="email" 
-          v-model="email" 
-          required 
-          placeholder="Enter your email"
-        />
+        <input type="email" id="email" v-model="email" required placeholder="Enter your email" />
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          v-model="password" 
-          required 
-          placeholder="Enter your password"
-        />
+        <input type="password" id="password" v-model="password" required placeholder="Enter your password" />
       </div>
       <button type="submit" class="btn">Login</button>
       <p class="register-link">
@@ -42,7 +30,8 @@ export default {
   methods: {
     async handleLogin() {
       try {
-        const response = await fetch('https://charging-station-backend-odxc.onrender.com/api/auth/login', {
+        const apiUrl = import.meta.env.VITE_API_URL;
+        const response = await fetch(`${apiUrl}/api/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -54,7 +43,7 @@ export default {
         });
 
         const data = await response.json();
-        
+
         if (response.ok) {
           localStorage.setItem('token', data.token);
           alert('Login successful');

@@ -29,7 +29,7 @@ export default {
         return;
       }
 
-      const response = await fetch('https://charging-station-backend-odxc.onrender.com/api/auth/me', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
