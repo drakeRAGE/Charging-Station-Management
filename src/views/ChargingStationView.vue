@@ -109,8 +109,8 @@ onMounted(() => {
       <div v-if="isLoading">Loading...</div>
       <div v-else-if="error">{{ error }}</div>
       <div v-else>
-        <ChargerCard v-for="station in stations" :key="station._id" :station="station" @edit="handleEdit"
-          @delete="handleDelete" />
+        <ChargerCard v-for="station in stations" :key="station._id" :station="station" :edit="handleEdit"
+          :deletes="handleDelete" />
       </div>
     </div>
   </div>
