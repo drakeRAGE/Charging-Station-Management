@@ -118,11 +118,43 @@ onMounted(() => {
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
               <circle cx="12" cy="10" r="3"/>
             </svg>
-            Network Overview
+            {{ showMap && selectedStation ? selectedStation.name + ' Location' : 'Network Overview' }}
           </h2>
+          <button 
+            v-if="showMap" 
+            @click="closeMap"
+            class="close-map-btn"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Close Map
+          </button>
         </div>
+        
         <div class="map-container">
-          <div class="map-placeholder">
+          <!-- Show map when station is selected -->
+          <div v-if="showMap && selectedStation" class="inline-map-wrapper">
+            <div class="inline-map-content">
+              <div class="station-details">
+                <h3>{{ selectedStation.name }}</h3>
+                <p><strong>Location:</strong> {{ selectedStation.location }}</p>
+                <p><strong>Status:</strong> 
+                  <span :class="getStatusClass(selectedStation.status)">{{ selectedStation.status }}</span>
+                </p>
+                <p><strong>Power:</strong> {{ selectedStation.powerOutput }} kW</p>
+                <p><strong>Connector:</strong> {{ selectedStation.connectorType }}</p>
+              </div>
+              <StationMap
+                :station="selectedStation"
+                :inline="true"
+              />
+            </div>
+          </div>
+          
+          <!-- Default placeholder when no station is selected -->
+          <div v-else class="map-placeholder">
             <svg class="map-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M3 12h18m-9-9v18"/>
               <circle cx="12" cy="12" r="3"/>
@@ -225,19 +257,27 @@ onMounted(() => {
             :edit="handleEdit"
             :deletes="handleDelete"
             :on-card-click="handleCardClick"
+            :class="{ 'selected-card': selectedStation && selectedStation._id === station._id }"
           />
         </div>
       </div>
     </div>
-
-    <!-- Map Modal -->
-    <StationMap
-      v-if="showMap && selectedStation"
-      :station="selectedStation"
-      :on-close="closeMap"
-    />
   </div>
 </template>
+
+<script>
+export default {
+  methods: {
+    getStatusClass(status) {
+      return {
+        'status-online': status === 'Online' || status === 'Active',
+        'status-offline': status === 'Offline' || status === 'Inactive',
+        'status-maintenance': status === 'Maintenance'
+      };
+    }
+  }
+};
+</script>
 
 <style scoped>
 /* Global Styles */
@@ -359,13 +399,78 @@ onMounted(() => {
   margin-left: 0.5rem;
 }
 
+/* Close Map Button */
+.close-map-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.close-map-btn svg {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 2;
+}
+
+.close-map-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
 /* Map Container */
 .map-container {
   padding: 2rem;
 }
 
+/* Inline Map Wrapper */
+.inline-map-wrapper {
+  height: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.inline-map-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.station-details {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.station-details h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.station-details p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.station-details strong {
+  color: #333;
+}
+
+/* Map Placeholder */
 .map-placeholder {
-  height: 300px;
+  height: 400px;
   border: 2px dashed #cbd5e0;
   border-radius: 12px;
   display: flex;
@@ -526,6 +631,41 @@ onMounted(() => {
   gap: 1.5rem;
 }
 
+/* Selected Card Highlight */
+.selected-card {
+  border-color: #667eea !important;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+.selected-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 14px;
+  z-index: -1;
+}
+
+/* Status Classes */
+.status-online {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.status-offline {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.status-maintenance {
+  color: #ffc107;
+  font-weight: 600;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .main-grid {
@@ -573,12 +713,21 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
   
-  .map-placeholder {
-    height: 250px;
+  .map-placeholder,
+  .inline-map-wrapper {
+    height: 300px;
   }
   
   .map-instructions {
     display: none;
+  }
+
+  .inline-map-content {
+    flex-direction: column;
+  }
+  
+  .station-details {
+    padding: 0.75rem;
   }
 }
 </style>

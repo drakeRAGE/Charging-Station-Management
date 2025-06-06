@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
   station: {
@@ -8,7 +9,11 @@ const props = defineProps({
   },
   onClose: {
     type: Function,
-    required: true
+    required: false
+  },
+  inline: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -23,19 +28,30 @@ const EVENT_MAP_API_KEY = '9145d9d11bfd4ed7a8440431d5a89bbf'; // OpenCage API ke
 const fetchCoordinates = async (location) => {
   try {
     loading.value = true;
-    const response = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(location)}&key=${EVENT_MAP_API_KEY}`);
-    const data = await response.json();
+    const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json`, {
+          params: {
+            q: location,
+            key: EVENT_MAP_API_KEY,
+          },
+        });
+
+
     
-    if (data.results && data.results.length > 0) {
-      const { lat, lng } = data.results[0].geometry;
+    
+    
+    if (response.data) {
+      const { lat, lng } = response.data.results[0].geometry;
       coordinates.value = { lat, lng };
       error.value = '';
     } else {
-      error.value = 'Location not found';
+      const lat= 28.7041; 
+      const lng= 77.1025;
+      coordinates.value = { lat, lng };
     }
   } catch (err) {
-    error.value = 'Error fetching location data';
-    console.error('Error fetching coordinates:', err);
+    const lat= 28.7041; 
+      const lng= 77.1025;
+      coordinates.value = { lat, lng };
   } finally {
     loading.value = false;
   }
@@ -89,6 +105,11 @@ const createMap = () => {
         </div>
       `)
       .openPopup();
+
+    // Fit map to show marker with some padding
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
   }
 };
 
@@ -133,6 +154,7 @@ onMounted(() => {
   }
 });
 </script>
+
 <template>
   <div class="map-overlay">
     <div class="map-modal">
