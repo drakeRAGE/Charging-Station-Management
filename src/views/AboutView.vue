@@ -106,16 +106,6 @@ onMounted(() => {
         currentTestimonial.value = (currentTestimonial.value + 1) % testimonials.value.length;
     }, 5000);
 
-    // Animate statistics
-    setTimeout(() => {
-        const interval = setInterval(() => {
-            if (currentStat.value < stats.value.length - 1) {
-                currentStat.value++;
-            } else {
-                clearInterval(interval);
-            }
-        }, 200);
-    }, 1000);
 });
 
 // Methods

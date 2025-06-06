@@ -26,7 +26,6 @@ const checkAuth = () => {
 const fetchStations = async () => {
   try {
     isLoading.value = true;
-
     const { data } = await axios.get(`${apiUrl}/api/charging-stations`);
     console.log("fetching data", data)
     stations.value = data;
@@ -41,7 +40,6 @@ const handleSubmit = async (formData) => {
   const token = checkAuth();
   try {
     if (isEditing.value) {
-
       await axios.put(`${apiUrl}/api/charging-stations/${currentStationId.value}`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -67,7 +65,6 @@ const handleEdit = (station) => {
 const handleDelete = async (id) => {
   const token = checkAuth();
   try {
-
     await axios.delete(`${apiUrl}/api/charging-stations/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -81,108 +78,450 @@ onMounted(() => {
   checkAuth();
   fetchStations();
 });
-
-
-
-
 </script>
 
 <template>
-  <div class="charging-station">
-    <div class="map-container">
-      <!-- Map will be implemented here -->
-      <h3>Map View</h3>
-      <div class="map-placeholder">
-        Map will be displayed here
+  <div class="charging-station-container">
+    <!-- Header Section -->
+    <div class="header-section bg-inherit">
+      <div class="header-content">
+        <h1 class="page-title">
+          <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+          </svg>
+          Charging Station Management
+        </h1>
+        <p class="page-subtitle">Manage and monitor your EV charging network</p>
       </div>
     </div>
 
-    <div class="station-form">
-      <h3>{{ isEditing ? 'Edit' : 'Add' }} Charging Station</h3>
-      <ChargerForm v-if="isEditing" :initial-data="stations.find(s => s._id === currentStationId)"
-        @submit="handleSubmit" @cancel="isEditing = false; currentStationId = null" />
-      <ChargerForm v-else @submit="handleSubmit" />
+    <!-- Main Content Grid -->
+    <div class="main-grid">
+      <!-- Map Section -->
+      <div class="map-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Network Overview
+          </h2>
+        </div>
+        <div class="map-container">
+          <div class="map-placeholder">
+            <svg class="map-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M3 12h18m-9-9v18"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <h3>Interactive Map</h3>
+            <p>Station locations will be displayed here</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            {{ isEditing ? 'Edit Station' : 'Add New Station' }}
+          </h2>
+          <button 
+            v-if="isEditing" 
+            @click="isEditing = false; currentStationId = null"
+            class="cancel-btn"
+          >
+            Cancel
+          </button>
+        </div>
+        <div class="form-container">
+          <ChargerForm 
+            v-if="isEditing" 
+            :initial-data="stations.find(s => s._id === currentStationId)"
+            @submit="handleSubmit" 
+            @cancel="isEditing = false; currentStationId = null" 
+          />
+          <ChargerForm v-else @submit="handleSubmit" />
+        </div>
+      </div>
     </div>
 
-    <div class="station-list">
-      <h3>Available Stations</h3>
-      <div v-if="isLoading">Loading...</div>
-      <div v-else-if="error">{{ error }}</div>
-      <div v-else>
-        <ChargerCard v-for="station in stations" :key="station._id" :station="station" :edit="handleEdit"
-          :deletes="handleDelete" />
+    <!-- Stations List Section -->
+    <div class="stations-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 2L2 7v10c0 5.55 3.84 10 9 11 1.16-.21 2.31-.48 3.38-.86"/>
+            <path d="M22 12c0 .83-.15 1.64-.42 2.4M18 12l-2-2v8"/>
+          </svg>
+          Available Stations
+          <span class="station-count">{{ stations.length }}</span>
+        </h2>
+      </div>
+      
+      <div class="stations-content">
+        <!-- Loading State -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading stations...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div v-else-if="error" class="error-state">
+          <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <h3>Error Loading Stations</h3>
+          <p>{{ error }}</p>
+          <button @click="fetchStations" class="retry-btn">Try Again</button>
+        </div>
+        
+        <!-- Empty State -->
+        <div v-else-if="stations.length === 0" class="empty-state">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 12h8M12 8v8"/>
+          </svg>
+          <h3>No Stations Found</h3>
+          <p>Get started by adding your first charging station</p>
+        </div>
+        
+        <!-- Stations Grid -->
+        <div v-else class="stations-grid">
+          <ChargerCard 
+            v-for="station in stations" 
+            :key="station._id" 
+            :station="station" 
+            :edit="handleEdit"
+            :deletes="handleDelete" 
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.charging-station {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  padding: 20px;
+/* Global Styles */
+* {
+  box-sizing: border-box;
 }
 
-.map-container,
-.station-form,
-.station-list {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.charging-station-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Header Section */
+.header-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.title-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  stroke: #667eea;
+  stroke-width: 2;
+}
+
+.page-subtitle {
+  font-size: 1.125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Main Grid Layout */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto 2rem auto;
+  padding: 0 2rem;
+}
+
+/* Section Styles */
+.map-section,
+.form-section,
+.stations-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.map-section:hover,
+.form-section:hover,
+.stations-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  }
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.section-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke: #667eea;
+  stroke-width: 2;
+}
+
+.station-count {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+/* Map Container */
+.map-container {
+  padding: 2rem;
 }
 
 .map-placeholder {
   height: 300px;
-  background: #f0f0f0;
+  border: 2px dashed #cbd5e0;
+  border-radius: 12px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 10px;
+  gap: 1rem;
+  transition: all 0.3s ease;
 }
 
-.station-form {
-  grid-column: 2;
+.map-placeholder:hover {
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
 }
 
-.station-list {
-  grid-column: 1 / -1;
+.map-icon {
+  width: 3rem;
+  height: 3rem;
+  stroke: #64748b;
+  stroke-width: 1.5;
 }
 
-.station-card {
-  padding: 15px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+.map-placeholder h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
 }
 
-.form-group {
-  margin-bottom: 15px;
+.map-placeholder p {
+  color: #64748b;
+  margin: 0;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
+/* Form Container */
+.form-container {
+  padding: 2rem;
 }
 
-input[type="text"] {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.btn {
-  background: #42b983;
+.cancel-btn {
+  background: #ef4444;
   color: white;
-  padding: 10px 15px;
   border: none;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.btn:hover {
-  background: #3aa876;
+.cancel-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Stations Section */
+.stations-section {
+  grid-column: 1 / -1;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.stations-content {
+  padding: 2rem;
+}
+
+/* State Styles */
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-icon,
+.empty-icon {
+  width: 4rem;
+  height: 4rem;
+  stroke: #64748b;
+  stroke-width: 1.5;
+}
+
+.error-state h3,
+.empty-state h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.error-state p,
+.empty-state p {
+  color: #64748b;
+  margin: 0;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.3);
+}
+
+/* Stations Grid */
+.stations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+  
+  .header-content {
+    padding: 0 1rem;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+  }
+  
+  .stations-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-content {
+    text-align: center;
+  }
+  
+  .page-title {
+    font-size: 1.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .section-title {
+    font-size: 1.25rem;
+  }
+  
+  .stations-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .map-placeholder {
+    height: 250px;
+  }
 }
 </style>
