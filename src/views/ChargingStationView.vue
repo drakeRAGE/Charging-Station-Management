@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import axios from 'axios';
 import ChargerForm from '../components/ChargerForm.vue';
 import ChargerCard from '../components/ChargerCard.vue';
+import StationMap from '../components/MapView.vue';
 
 const router = useRouter();
 const stations = ref([]);
@@ -11,6 +12,8 @@ const isLoading = ref(false);
 const error = ref(null);
 const isEditing = ref(false);
 const currentStationId = ref(null);
+const selectedStation = ref(null);
+const showMap = ref(false);
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -74,6 +77,16 @@ const handleDelete = async (id) => {
   }
 };
 
+const handleCardClick = (station) => {
+  selectedStation.value = station;
+  showMap.value = true;
+};
+
+const closeMap = () => {
+  showMap.value = false;
+  selectedStation.value = null;
+};
+
 onMounted(() => {
   checkAuth();
   fetchStations();
@@ -115,7 +128,17 @@ onMounted(() => {
               <circle cx="12" cy="12" r="3"/>
             </svg>
             <h3>Interactive Map</h3>
-            <p>Station locations will be displayed here</p>
+            <p>Click on any station card to view its location</p>
+            <div class="map-instructions">
+              <div class="instruction-item">
+                <span class="instruction-icon">👆</span>
+                <span>Click on a station card below</span>
+              </div>
+              <div class="instruction-item">
+                <span class="instruction-icon">🗺️</span>
+                <span>View detailed location map</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -200,11 +223,19 @@ onMounted(() => {
             :key="station._id" 
             :station="station" 
             :edit="handleEdit"
-            :deletes="handleDelete" 
+            :deletes="handleDelete"
+            :on-card-click="handleCardClick"
           />
         </div>
       </div>
     </div>
+
+    <!-- Map Modal -->
+    <StationMap
+      v-if="showMap && selectedStation"
+      :station="selectedStation"
+      :on-close="closeMap"
+    />
   </div>
 </template>
 
@@ -298,7 +329,8 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 2rem;
-  }
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
 
 .section-title {
   display: flex;
@@ -342,6 +374,7 @@ onMounted(() => {
   justify-content: center;
   gap: 1rem;
   transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.02), rgba(118, 75, 162, 0.02));
 }
 
 .map-placeholder:hover {
@@ -366,6 +399,26 @@ onMounted(() => {
 .map-placeholder p {
   color: #64748b;
   margin: 0;
+  text-align: center;
+}
+
+.map-instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.instruction-icon {
+  font-size: 1rem;
 }
 
 /* Form Container */
@@ -522,6 +575,10 @@ onMounted(() => {
   
   .map-placeholder {
     height: 250px;
+  }
+  
+  .map-instructions {
+    display: none;
   }
 }
 </style>
